@@ -1,0 +1,140 @@
+---
+# Source: espresso/templates/pdb.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: espresso-shop-web
+spec:
+  maxUnavailable: 2
+  selector:
+    matchLabels:
+      app: espresso-shop-web
+---
+# Source: espresso/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: espresso-shop-web
+  labels:
+    app: espresso-shop-web
+---
+# Source: espresso/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: espresso-shop-web
+type: Opaque
+data:
+  authKey: RCY7SiJtZDlYYURMIl5edXE8bnUsXmU9cWRuYQ==
+  password: RUpoR3hGOjhlKF9QVTlOfmc3KS0pbTJUbk5wJk5m
+---
+# Source: espresso/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: espresso-shop-web
+  labels:
+    app: espresso-shop-web
+spec:
+  type: NodePort
+  ports:
+    - port: 8090
+      targetPort: 80
+      nodePort: 30004
+      protocol: TCP
+      name: http
+  selector:
+    app: espresso-shop-web
+---
+# Source: espresso/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: espresso-shop-web
+  labels:
+    app: espresso-shop-web
+spec:
+  selector:
+    matchLabels:
+      app: espresso-shop-web
+  strategy:
+    type: RollingUpdate 
+    rollingUpdate:
+      maxUnavailable: 2
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: espresso-shop-web
+    spec:
+      serviceAccountName: espresso-shop-web
+      securityContext:
+        {}
+      containers:
+        - name: espresso
+          securityContext:
+            {}
+          image: "hossambarakat/espresso-shop-web:latest"
+          imagePullPolicy: IfNotPresent
+          envFrom:
+          - secretRef:
+              name: espresso-shop-web
+          env:
+            - name: ProductCatalogUrl
+              value: http://espresso-shop-product-catalog-svc:8091
+            - name:  ReviewsUrl
+              value: http://espresso-shop-reviews-svc:8092
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+---
+# Source: espresso/templates/hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: espresso-shop-web
+  labels:
+    app: espresso-shop-web
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: espresso-shop-web
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
+---
+# Source: espresso/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "release-name-espresso-test-connection"
+  labels:
+    helm.sh/chart: espresso-0.1.0
+    app.kubernetes.io/name: espresso
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['release-name-espresso:8090']
+  restartPolicy: Never
