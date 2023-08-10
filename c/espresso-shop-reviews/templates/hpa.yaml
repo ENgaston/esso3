@@ -2,21 +2,21 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ .Values.name }}
+  name : {{ .Values.name  }}-v1
   labels:
     app: {{ .Values.labels.app }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ .Values.name }}
+    name : {{ .Values.name  }}-v1
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
   metrics:
     {{- if .Values.autoscaling.targetCPUUtilizationPercentage }}
     - type: Resource
       resource:
-        name:  {{ .Values.autoscaling.name }}
+        name : {{ .Values.autoscaling.name }}
         target:
           type: {{ .Values.autoscaling.type }}
           averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
@@ -24,7 +24,7 @@ spec:
     {{- if .Values.autoscaling.targetMemoryUtilizationPercentage }}
     - type: Resource
       resource:
-        name: memory
+        name : memory
         target:
           type: Utilization
           averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}

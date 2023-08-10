@@ -1,9 +1,9 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ .Values.name }}
+  name: {{ .Values.name }}-v1
 spec:
-  maxUnavailable: {{ .Values.PodDisruptionBudget }}
+  maxUnavailable: 2
   selector:
     matchLabels:
       app: {{ .Values.labels.app }}

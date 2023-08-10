@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: hossambarakat/espresso-shop-web
+  repository: hossambarakat/espresso-shop-product-catalog
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
@@ -21,7 +21,7 @@ serviceAccount:
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: "espresso-shop-web"
+  name: "espresso-shop-product"
 
 podAnnotations: {}
 
@@ -37,10 +37,9 @@ securityContext:
   # runAsUser: 1000
 
 service:
-  type: NodePort
-  port: 8090
+  type: ClusterIP
+  port: 8091
   targetPort: 80
-  nodePort: 30007
 
 ingress:
   enabled: true
@@ -86,27 +85,19 @@ tolerations: []
 
 affinity: {}
 
-PodDisruptionBudget: 1
-
-name: espresso-shop-web
+name: espresso-shop-product
 labels:
-  app: espresso-shop-web
+  app: espresso-shop-product
   version: v1
-
-connection:
-  productname: ProductCatalogUrl
-  productvalue: "http://espresso-shop-product-catalog-svc:8091"
-  reviewsname: ReviewsUrl
-  reviewsvalue: "http://espresso-shop-reviews-svc:8092"
-
-podDisruptionBudget: 1
 
 strategy:
   type: RollingUpdate
   rollingUpdate:
     maxUnavailable: 2
     maxSurge: 1
+#version: {{ .Values.labels.version }}
 
-redis:
-  password: "eTtbbSNMd3U1XVdWMkE2ZX0ueFhifkM0Nw=="
-  authKey: "NWhFP1E5JnBBUUBFM2ZfZVpVYmc4NGcmVA=="
+postgres:
+  username: "postgres"
+  password: "TlhZJmdlcCNTWG4qNnJ1VkpMdldkekRyIVZhV3hNKkJF"
+  database: "espresso"

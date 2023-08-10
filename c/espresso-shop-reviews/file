@@ -1,0 +1,213 @@
+---
+# Source: espresso/templates/pdb.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: espresso-shop-reviews-v1
+spec:
+  maxUnavailable: 2
+  selector:
+    matchLabels:
+      app: espresso-shop-reviews-v1
+---
+# Source: espresso/templates/pdb2.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: espresso-shop-reviews-v2
+spec:
+  maxUnavailable: 2
+  selector:
+    matchLabels:
+      app2: espresso-shop-reviews-v2
+---
+# Source: espresso/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: espresso-shop-reviews-v1
+  labels:
+    app: espresso-shop-reviews-v1
+---
+# Source: espresso/templates/serviceaccount2.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: espresso-shop-reviews-v2
+  labels:
+    app2: espresso-shop-reviews-v2
+---
+# Source: espresso/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: espresso-shop-reviews
+type: Opaque
+data:
+  username: postgres
+  password: TlhZJmdlcCNTWG4qNnJ1VkpMdldkekRyIVZhV3hNKkJF
+  database: espresso
+---
+# Source: espresso/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: espresso-shop-reviews-svc
+  labels:
+    app0: espresso-shop-reviews
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8092
+      targetPort: 80
+      nodePort: 
+      protocol: TCP
+      name: http
+  selector:
+    version: v1
+    version2: v2
+---
+# Source: espresso/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: espresso-shop-reviews-v1
+  labels:
+    app: espresso-shop-reviews-v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: espresso-shop-reviews-v1
+  strategy:
+    type: RollingUpdate 
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: espresso-shop-reviews-v1
+        version: v1
+    spec:
+      serviceAccountName: espresso-shop-reviews-v1
+      securityContext:
+        {}
+      containers:
+        - name: espresso
+          securityContext:
+            {}
+          image: "hossambarakat/espresso-shop-reviews:latest"
+          envFrom:
+          - secretRef:
+              name: espresso-shop-reviews
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SERVICE_VERSION
+              value: v1
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+---
+# Source: espresso/templates/deployment2.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: espresso-shop-reviews-v2
+  labels:
+    app2: espresso-shop-reviews-v2
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app2: espresso-shop-reviews-v2
+  strategy:
+    type: RollingUpdate 
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app2: espresso-shop-reviews-v2
+        version2: v2
+    spec:
+      serviceAccountName: espresso-shop-reviews-v2
+      securityContext:
+        {}
+      containers:
+        - name: espresso
+          securityContext:
+            {}
+          image: "hossambarakat/espresso-shop-reviews:latest"
+          envFrom:
+          - secretRef:
+              name: espresso-shop-reviews 
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SERVICE_VERSION
+              value: v2
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+---
+# Source: espresso/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: release-name-espresso
+  labels:
+    helm.sh/chart: espresso-0.1.0
+    app.kubernetes.io/name: espresso
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  rules:
+    - host: "chart-example.local"
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: release-name-espresso
+                port:
+                  number: 8092
+---
+# Source: espresso/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "release-name-espresso-test-connection"
+  labels:
+    helm.sh/chart: espresso-0.1.0
+    app.kubernetes.io/name: espresso
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['release-name-espresso:8092']
+  restartPolicy: Never

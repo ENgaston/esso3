@@ -3,87 +3,86 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: espresso-shop-web
+  name: espresso-shop-product
 spec:
-  maxUnavailable: 1
+  maxUnavailable: 2
   selector:
     matchLabels:
-      app: espresso-shop-web
+      app: espresso-shop-product
+      version: v1
 ---
 # Source: espresso/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: espresso-shop-web-sa
+  name: espresso-shop-product
   labels:
-    app: espresso-shop-web
+    app: espresso-shop-product
+    version: v1
 ---
 # Source: espresso/templates/secret.yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: espresso-shop-web
+  name: espresso-shop-product
 type: Opaque
 data:
-  authKey: NWhFP1E5JnBBUUBFM2ZfZVpVYmc4NGcmVA==
-  password: eTtbbSNMd3U1XVdWMkE2ZX0ueFhifkM0Nw==
+  username: postgres
+  password: TlhZJmdlcCNTWG4qNnJ1VkpMdldkekRyIVZhV3hNKkJF
+  database: espresso
 ---
 # Source: espresso/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: espresso-shop-web-svc
+  name: espresso-shop-product-svc
   labels:
-    app: espresso-shop-web
+    app: espresso-shop-product
+    version: v1
 spec:
-  type: NodePort
+  type: ClusterIP
   ports:
-    - port: 8090
+    - port: 8091
       targetPort: 80
-      nodePort: 30007
       protocol: TCP
       name: http
   selector:
-    app: espresso-shop-web
+    app: espresso-shop-product
+    version: v1
 ---
 # Source: espresso/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: espresso-shop-web
+  name: espresso-shop-product
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: espresso-shop-web
+      app: espresso-shop-product
   strategy:
-    type: RollingUpdate 
+    type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 2
       maxSurge: 1
   template:
     metadata:
       labels:
-        app: espresso-shop-web
+        app: espresso-shop-product
         version: v1
     spec:
-      serviceAccountName: espresso-shop-web
+      serviceAccountName: espresso-shop-product
       securityContext:
         {}
       containers:
         - name: espresso
+          image: "hossambarakat/espresso-shop-product-catalog:latest"
           securityContext:
             {}
-          image: "hossambarakat/espresso-shop-web:latest"
-          imagePullPolicy: IfNotPresent
           envFrom:
             - secretRef:
-                name: espresso-shop-web
-          env:
-            - name: ProductCatalogUrl
-              value: http://espresso-shop-product-catalog-svc:8091
-            - name:  ReviewsUrl
-              value: http://espresso-shop-reviews-svc:8092
+                name: espresso-shop-product
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 80
@@ -114,5 +113,5 @@ spec:
     - name: wget
       image: busybox
       command: ['wget']
-      args: ['release-name-espresso:8090']
+      args: ['release-name-espresso:8091']
   restartPolicy: Never

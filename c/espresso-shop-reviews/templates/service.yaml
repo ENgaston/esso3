@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: {{ .Values.name }}-svc
   labels:
-    app: {{ .Values.labels.app }}
+    app0: {{ .Values.labels.app0 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -13,4 +13,5 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: {{ .Values.labels.app }}
+    version: {{ .Values.labels.version }}
+    version2: {{ .Values.labels.version2 }}

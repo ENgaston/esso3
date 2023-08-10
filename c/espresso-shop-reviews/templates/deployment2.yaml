@@ -1,14 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.name }}
+  name: {{ .Values.name }}-v2
+  labels:
+    app2: {{ .Values.labels.app2 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      app: {{ .Values.labels.app }}
+      app2: {{ .Values.labels.app2 }}
   strategy:
     type: {{ .Values.strategy.type }} 
     rollingUpdate:
@@ -21,14 +23,14 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        app: {{ .Values.labels.app }}
-        version: {{ .Values.labels.version }}
+        app2: {{ .Values.labels.app2 }}
+        version2: {{ .Values.labels.version2 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "espresso.serviceAccountName" . }}
+      serviceAccountName: {{ .Values.labels.app2 }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -36,15 +38,13 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
           envFrom:
-            - secretRef:
-                name: {{ .Values.name }}
+          - secretRef:
+              name: {{ .Values.name }} 
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            - name: {{ .Values.connection.productname }}
-              value: {{ .Values.connection.productvalue }}
-            - name:  {{ .Values.connection.reviewsname }}
-              value: {{ .Values.connection.reviewsvalue }}
+            - name: {{ .Values.connection.productname2 }}
+              value: {{ .Values.connection.productvalue2 }}
           ports:
             - name: http
               containerPort: {{ .Values.service.targetPort }}

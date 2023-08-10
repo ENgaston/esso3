@@ -4,13 +4,14 @@ metadata:
   name: {{ .Values.name }}-svc
   labels:
     app: {{ .Values.labels.app }}
+    version: {{ .Values.labels.version }}
 spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.targetPort }}
-      nodePort: {{ .Values.service.nodePort }}
       protocol: TCP
       name: http
   selector:
     app: {{ .Values.labels.app }}
+    version: {{ .Values.labels.version }}

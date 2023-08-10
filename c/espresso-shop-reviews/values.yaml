@@ -2,10 +2,10 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 1
+replicaCount: 2
 
 image:
-  repository: hossambarakat/espresso-shop-web
+  repository: hossambarakat/espresso-shop-reviews
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
@@ -21,7 +21,7 @@ serviceAccount:
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: "espresso-shop-web"
+  name: "espresso-shop-reviews"
 
 podAnnotations: {}
 
@@ -37,10 +37,9 @@ securityContext:
   # runAsUser: 1000
 
 service:
-  type: NodePort
-  port: 8090
+  type: ClusterIP
+  port: 8092
   targetPort: 80
-  nodePort: 30007
 
 ingress:
   enabled: true
@@ -77,7 +76,7 @@ autoscaling:
   maxReplicas: 4
   name: cpu
   type: Utilization
-  targetCPUUtilizationPercentage: 50
+  targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
 nodeSelector: {}
@@ -86,27 +85,27 @@ tolerations: []
 
 affinity: {}
 
-PodDisruptionBudget: 1
-
-name: espresso-shop-web
+name: espresso-shop-reviews
 labels:
-  app: espresso-shop-web
+  app0: espresso-shop-reviews
+  app: espresso-shop-reviews-v1
   version: v1
+  app2: espresso-shop-reviews-v2
+  version2: v2
 
 connection:
-  productname: ProductCatalogUrl
-  productvalue: "http://espresso-shop-product-catalog-svc:8091"
-  reviewsname: ReviewsUrl
-  reviewsvalue: "http://espresso-shop-reviews-svc:8092"
-
-podDisruptionBudget: 1
+  productname: SERVICE_VERSION
+  productvalue: v1
+  productname2: SERVICE_VERSION
+  productvalue2: v2
 
 strategy:
   type: RollingUpdate
   rollingUpdate:
-    maxUnavailable: 2
+    maxUnavailable: 1
     maxSurge: 1
 
-redis:
-  password: "eTtbbSNMd3U1XVdWMkE2ZX0ueFhifkM0Nw=="
-  authKey: "NWhFP1E5JnBBUUBFM2ZfZVpVYmc4NGcmVA=="
+postgres:
+  username: "postgres"
+  password: "TlhZJmdlcCNTWG4qNnJ1VkpMdldkekRyIVZhV3hNKkJF"
+  database: "espresso"
